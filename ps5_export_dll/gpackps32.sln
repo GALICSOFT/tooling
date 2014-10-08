@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{7BA75FAF-E1D2-4B87-96B1-54610E2B627E}") = "gpackps32", "gpackps32.vcproj", "{744114BD-2DB2-4D38-9E87-19F48149C456}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{744114BD-2DB2-4D38-9E87-19F48149C456}.Debug|Win32.ActiveCfg = Debug|Win32
+		{744114BD-2DB2-4D38-9E87-19F48149C456}.Debug|Win32.Build.0 = Debug|Win32
+		{744114BD-2DB2-4D38-9E87-19F48149C456}.Release|Win32.ActiveCfg = Release|Win32
+		{744114BD-2DB2-4D38-9E87-19F48149C456}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
