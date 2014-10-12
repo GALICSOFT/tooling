@@ -229,11 +229,15 @@ void FileConvertToTga(char* file)
 	IDirect3DSurface9*		pSrcSurface = NULL;
 
 
-	char drive[_MAX_DRIVE];
-	char dir[_MAX_DIR];
-	char fname[_MAX_FNAME];
+	char drive[_MAX_DRIVE]={0};
+	char dir  [_MAX_DIR  ]={0};
+	char fname[_MAX_FNAME]={0};
+	char flwrs[_MAX_FNAME]={0};
 
-	_splitpath( file, drive, dir, fname, NULL );
+	strcpy(flwrs, file);
+
+	char* lwr = strlwr(flwrs);
+	_splitpath( lwr, drive, dir, fname, NULL );
 
 	//	Load Ui texture
 	hr = D3DXCreateTextureFromFileEx(
