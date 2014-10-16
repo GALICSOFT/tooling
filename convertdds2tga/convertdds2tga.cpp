@@ -209,6 +209,12 @@ void FileConvert(char* root)
 					//printf("File: %s\n", tNode);
 					FileConvertToTga(tNode);
 				}
+				else if(0 == stricmp(".bmp", ext))
+				{
+					sprintf(tNode, "%s/%s", root, fd.name);
+					//printf("File: %s\n", tNode);
+					FileConvertToTga(tNode);
+				}
 			}
 
 			result =_findnext((long)handle, &fd);
@@ -226,6 +232,7 @@ void FileConvertToTga(char* file)
 	char					dstFile[MAX_PATH*2] ={0};
 	LPDIRECT3DTEXTURE9		pTex = NULL;
 	D3DXIMAGE_INFO			img_inf={0};
+	D3DSURFACE_DESC			srf_dsc={(D3DFORMAT)0,};
 	IDirect3DSurface9*		pSrcSurface = NULL;
 
 
@@ -239,6 +246,8 @@ void FileConvertToTga(char* file)
 	char* lwr = strlwr(flwrs);
 	_splitpath( lwr, drive, dir, fname, NULL );
 
+	D3DXGetImageInfoFromFile(file, &img_inf);
+
 	//	Load Ui texture
 	hr = D3DXCreateTextureFromFileEx(
 		m_pDev, file
@@ -250,7 +259,53 @@ void FileConvertToTga(char* file)
 		, D3DPOOL_MANAGED
 		, 0x0000001, 0x0000001
 		, 0
-		, &img_inf
+		, NULL	//, &img_inf
+		, 0
+		, &pTex);
+
+
+	if( FAILED(hr))
+		return;
+
+
+	hr = pTex->GetLevelDesc(0, &srf_dsc);
+	hr = pTex->GetSurfaceLevel(0, &pSrcSurface);
+	if( FAILED(hr))
+	{
+		pTex->Release();
+		return;
+	}
+
+
+	//sprintf(dstFile, "%s%s%s.png", drive, dir, fname);
+	//D3DXSaveSurfaceToFile(dstFile, D3DXIFF_PNG, pSrcSurface, NULL, NULL);
+
+	sprintf(dstFile, "%s%s%s.tga", drive, dir, fname);
+	D3DXSaveSurfaceToFile(dstFile, D3DXIFF_TGA, pSrcSurface, NULL, NULL);
+
+	pSrcSurface->Release();
+	pSrcSurface = NULL;
+
+	return;
+
+	////////////////////////////////////////////////////////////////////////////
+	//
+	// need not inversion
+	//
+	////////////////////////////////////////////////////////////////////////////
+
+	//	Load Ui texture
+	hr = D3DXCreateTextureFromFileEx(
+		m_pDev, dstFile
+		, D3DX_DEFAULT
+		, D3DX_DEFAULT
+		, D3DX_DEFAULT
+		, 0
+		, D3DFMT_UNKNOWN
+		, D3DPOOL_MANAGED
+		, 0x0000001, 0x0000001
+		, 0
+		, NULL	//, &img_inf
 		, 0
 		, &pTex);
 
@@ -260,6 +315,8 @@ void FileConvertToTga(char* file)
 
 
 
+
+	hr = pTex->GetLevelDesc(0, &srf_dsc);
 	hr = pTex->GetSurfaceLevel(0, &pSrcSurface);
 	if( FAILED(hr))
 	{
@@ -268,13 +325,92 @@ void FileConvertToTga(char* file)
 	}
 
 
-	sprintf(dstFile, "%s%s%s.png", drive, dir, fname);
-	D3DXSaveSurfaceToFile(dstFile, D3DXIFF_PNG, pSrcSurface, NULL, NULL);
+	// dds format is a zip so, when directly call this method will be error.
+	// first save tga and re open, inversion and re save.
+	// it'a hardly method and i do not recommend because i have no idea.
+
+	D3DLOCKED_RECT	d3d_lock;
+	INT colByte  = 0;
+	INT src_w;
+	INT src_h;
+
+	pSrcSurface->LockRect(&d3d_lock, NULL, 0);
+
+	src_w = srf_dsc.Width;
+	src_h = srf_dsc.Height;
+
+	colByte = d3d_lock.Pitch / src_w;
+
+	if(1 == colByte)
+	{
+		BYTE* col = (BYTE*)d3d_lock.pBits;
+		BYTE  tmp = 0;
+		BYTE* s0  = NULL;
+		BYTE* s1  = NULL;
+
+		for(int y=0; y< src_h/2; ++y)
+		{
+			s0 = &col[ y * srf_dsc.Width];
+			s1 = &col[ (src_h-1-y) * src_w];
+
+			for(int x=0; x<src_w; ++x)
+			{
+				tmp    = s1[x];
+				s1[x]  = s0[x];
+				s0[x]  = tmp;
+			}
+		}
+	}
+	else if(2 == colByte)
+	{
+		WORD* col = (WORD*)d3d_lock.pBits;
+		WORD  tmp = 0;
+		WORD* s0  = NULL;
+		WORD* s1  = NULL;
+
+		for(int y=0; y< src_h/2; ++y)
+		{
+			s0 = &col[ y * src_w];
+			s1 = &col[ (src_h-1-y) * src_w];
+
+			for(int x=0; x<src_w; ++x)
+			{
+				tmp    = s1[x];
+				s1[x]  = s0[x];
+				s0[x]  = tmp;
+			}
+		}
+	}
+	else
+	{
+		DWORD* col = (DWORD*)d3d_lock.pBits;
+		DWORD  tmp = 0;
+		DWORD* s0  = NULL;
+		DWORD* s1  = NULL;
+
+		for(int y=0; y< src_h/2; ++y)
+		{
+			s0 = &col[ y * src_w];
+			s1 = &col[ (src_h-1-y) * src_w];
+
+			for(int x=0; x<src_w; ++x)
+			{
+				tmp    = s1[x];
+				s1[x]  = s0[x];
+				s0[x]  = tmp;
+			}
+		}
+	}
+
+	pSrcSurface->UnlockRect();
+
+	//sprintf(dstFile, "%s%s%s.png", drive, dir, fname);
+	//D3DXSaveSurfaceToFile(dstFile, D3DXIFF_PNG, pSrcSurface, NULL, NULL);
 
 	sprintf(dstFile, "%s%s%s.tga", drive, dir, fname);
 	D3DXSaveSurfaceToFile(dstFile, D3DXIFF_TGA, pSrcSurface, NULL, NULL);
 
 	pSrcSurface->Release();
-	pSrcSurface = NULL;
+	pSrcSurface = NULL;	
 }
 
